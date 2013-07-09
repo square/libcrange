@@ -1,8 +1,0 @@
-Changes
-Libcrange.xs
-Makefile.PL
-MANIFEST
-ppport.h
-README
-t/Seco-Libcrange.t
-lib/Seco/Libcrange.pm
