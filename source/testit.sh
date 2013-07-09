@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd t
-for i in *.t; do ./$i; done
+for i in *.t; do ./$i || exit 1; done
