@@ -29,19 +29,9 @@ extern "C"
  #define LIBCRANGE_FUNCDIR "/usr/lib/libcrange"
 #endif
 
-typedef struct libcrange {
-    set* caches;
-    set* functions;
-    set* perl_functions;
-    set* vars;
+struct libcrange;
+typedef struct libcrange libcrange;
 
-    apr_pool_t* pool;
-    const char* default_domain;
-    const char* confdir;
-    const char* config_file;
-    const char* funcdir;
-    int want_caching;
-} libcrange;
 
 
 struct range_request;

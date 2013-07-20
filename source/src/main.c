@@ -56,14 +56,15 @@ int main(int argc, char const* const* argv)
 
     if (debug) {
         printf("DEBUG: after libcrange_new have an lr with attrs:\n");
-        printf("DEBUG: lr->default_domain: %s\n", lr->default_domain);
-        printf("DEBUG: lr->confdir: %s\n", lr->confdir);
-        printf("DEBUG: lr->config_file: %s\n", lr->config_file);
-        printf("DEBUG: lr->funcdir: %s\n", lr->funcdir);
-        printf("DEBUG: lr->want_caching: %d\n", lr->want_caching);
-        dump_hash_values(lr->vars);
-        fprintf(stderr, "DEBUG: lr->vars: ");
-        set_dump(lr->vars);
+// have to provide a lr debug function for this -- otherwise we expose too many internals
+//        printf("DEBUG: lr->default_domain: %s\n", lr->default_domain);
+//        printf("DEBUG: lr->confdir: %s\n", lr->confdir);
+//        printf("DEBUG: lr->config_file: %s\n", lr->config_file);
+//        printf("DEBUG: lr->funcdir: %s\n", lr->funcdir);
+//        printf("DEBUG: lr->want_caching: %d\n", lr->want_caching);
+//        dump_hash_values(lr->vars);
+//        fprintf(stderr, "DEBUG: lr->vars: ");
+//        set_dump(lr->vars);
     }
 
     rr = range_expand(lr, pool, argv[argc-1]);
