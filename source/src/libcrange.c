@@ -452,3 +452,55 @@ static int parse_config_file(libcrange* lr)
     lr->vars = vars;
     return 0;
 }
+
+/* easy api*/
+
+easy_lr* range_easy_create(const char* config_file) {
+  easy_lr* elr = malloc(sizeof(easy_lr));
+  int debug = 1;
+  // The apr bits -- must pair this with apr_terminate()
+  apr_initialize();
+  apr_pool_create(&(elr->pool), NULL);
+  apr_pool_create(&(elr->querypool), elr->pool); // pool for transient range eval - cleared at each eval
+  //create a real lr
+  elr->lr = libcrange_new(elr->pool, config_file);
+
+  if (debug) {
+    printf("DEBUG: after libcrange_new have an lr with attrs:\n");
+    printf("DEBUG: lr->default_domain: %s\n", elr->lr->default_domain);
+    printf("DEBUG: lr->confdir: %s\n", elr->lr->confdir);
+    printf("DEBUG: lr->config_file: %s\n", elr->lr->config_file);
+    printf("DEBUG: lr->funcdir: %s\n", elr->lr->funcdir);
+    printf("DEBUG: lr->want_caching: %d\n", elr->lr->want_caching);
+    dump_hash_values(elr->lr->vars);
+    fprintf(stderr, "DEBUG: lr->vars: ");
+    set_dump(elr->lr->vars);
+  }
+
+  // copy/reference bits from it, to public config in easy_lr
+  return elr;
+}
+
+const char * range_easy_eval(easy_lr* elr, const char * c_range) {
+  struct range_request* range_req;
+  apr_pool_clear(elr->querypool);
+  range_req = range_expand(elr->lr, elr->querypool, c_range);
+  // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
+  return range_request_compressed(range_req);
+}
+
+const char ** range_easy_expand(easy_lr* elr, const char * c_range) {
+  char ** ret;
+  struct range_request* range_req;
+  apr_pool_clear(elr->querypool);
+  range_req = range_expand(elr->lr, elr->querypool, c_range);
+  
+  // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
+  return range_request_nodes(range_req);
+}
+
+char * range_easy_compress(easy_lr* elr, const char ** c_nodes) {
+  apr_pool_clear(elr->querypool);
+  // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
+  return range_compress(elr->lr, elr->querypool, c_nodes);
+}

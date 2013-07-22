@@ -81,6 +81,28 @@ void* libcrange_get_function(libcrange* lr, const char* funcname);
 char* libcrange_get_pcre_substring(apr_pool_t* pool, const char* string,
                                    int offsets[], int substr);
 
+/*
+ * Easy interface - just strings in strings out *
+ */
+
+typedef struct easy_lr {
+  libcrange* lr; // backing lr
+  apr_pool_t* pool; // long-lived objs
+  apr_pool_t* querypool; // cleared each function call
+} easy_lr;
+
+/* must call on startup */
+easy_lr* range_easy_create(const char* config_file);
+  
+/* string of range expr in,   */
+const char ** range_easy_expand(easy_lr* elr, const char * c_range);
+
+const char * range_easy_eval(easy_lr* elr, const char * c_range);
+
+char * range_easy_compress(easy_lr* elr, const char ** c_nodes);
+
+
+
 #ifdef __cplusplus
 }
 #endif
