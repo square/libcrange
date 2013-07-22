@@ -7,7 +7,6 @@ Copyrights licensed under the New BSD License. See the accompanying LICENSE file
 #define LIBCRANGE_H
 
 #include <apr_pools.h>
-#include "set.h"
 
 #ifdef __cplusplus
 extern "C"
