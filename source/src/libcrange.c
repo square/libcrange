@@ -504,3 +504,10 @@ char * range_easy_compress(easy_lr* elr, const char ** c_nodes) {
   // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
   return range_compress(elr->lr, elr->querypool, c_nodes);
 }
+
+int range_easy_destroy(easy_lr* elr) {
+  apr_pool_destroy(elr->pool);
+  free(elr);
+  return 0;
+}
+

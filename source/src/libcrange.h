@@ -101,6 +101,7 @@ const char * range_easy_eval(easy_lr* elr, const char * c_range);
 
 char * range_easy_compress(easy_lr* elr, const char ** c_nodes);
 
+int range_easy_destroy(easy_lr* elr);
 
 
 #ifdef __cplusplus
@@ -108,3 +109,4 @@ char * range_easy_compress(easy_lr* elr, const char ** c_nodes);
 #endif
 
 #endif
+
