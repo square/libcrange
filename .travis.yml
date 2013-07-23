@@ -4,7 +4,7 @@ compiler:
 #  - clang # broken, segv on loading modules
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libapr1 libapr1-dev flex libpcre3 libpcre3-dev sqlite3 libsqlite3-dev libsqlite3-0 libyaml-0-2 libyaml-dev libyaml-syck-perl perl-base libperl5.14 libperl-dev rubygems
+  - sudo apt-get install -qq libapr1 libapr1-dev flex libpcre3 libpcre3-dev sqlite3 libsqlite3-dev libsqlite3-0 libyaml-0-2 libyaml-dev libyaml-syck-perl perl-base libperl5.14 libperl-dev rubygems ruby-ffi
 script: cd source && ./doit.sh && ./testit.sh
 
 
