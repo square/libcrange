@@ -8,7 +8,7 @@ use FindBin;
 use File::Temp;
 
 my $config_base = "$FindBin::Bin/test_configs/funny_data_in_clusters";
-my $build_root = $ENV{DESTDIR} || "$ENV{HOME}/prefix";
+my $build_root = $ENV{DESTDIR};
 my ($range_conf_fh, $range_conf) = File::Temp::tempfile();
 
 #FIXME should probably sort outputs for stable tests
@@ -26,11 +26,6 @@ loadmodule $build_root/usr/lib/libcrange/yst-ip-list
 };
 
 print $range_conf_fh $range_conf_data;
-
-
-$ENV{DESTDIR} = "$ENV{HOME}/prefix";
-$ENV{PATH} = "$ENV{DESTDIR}/usr/bin:$ENV{PATH}";
-$ENV{LD_LIBRARY_PATH} = "$ENV{DESTDIR}/usr/lib"; #FIXME should be lib64 for a 64bit build
 
 # just md5sum outputs for now to make sure we're returning consistent data
 like( `crange -c $range_conf -e '\%urls:bare'`,
