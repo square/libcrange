@@ -20,15 +20,21 @@ class RangeLib:
         i = 0
         arr = []
         while arg[i] != self.ffi.NULL:
-            arr.append(self.ffi.string(arg[i])) 
+            x = self.ffi.string(arg[i])
+            print "doing ", x
+            arr.append(x) 
             i = i + 1
+        print "DONE", arr
         return arr
 
     def expand(self, c_range):
         ret = self.rangelib_ffi.range_easy_expand(self.elr, self.ffi.new("char[]", c_range))
-        return self.__charpp_to_native(ret)
+        x = self.__charpp_to_native(ret)
+        print "FFFF"
+        return x
 
     def compress(self, nodes):
+        print "COMPRESS"
         char_arg = map(lambda x: self.ffi.new("char[]", x), nodes)
         char_arg.append(self.ffi.NULL)
         ret = self.rangelib_ffi.range_easy_compress(self.elr, self.ffi.new("char*[]", char_arg))
