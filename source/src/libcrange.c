@@ -457,7 +457,7 @@ static int parse_config_file(libcrange* lr)
 
 easy_lr* range_easy_create(const char* config_file) {
   easy_lr* elr = malloc(sizeof(easy_lr));
-  int debug = 1;
+  int debug = 0;
   // The apr bits -- must pair this with apr_terminate()
   apr_initialize();
   apr_pool_create(&(elr->pool), NULL);
@@ -483,20 +483,38 @@ easy_lr* range_easy_create(const char* config_file) {
 
 const char * range_easy_eval(easy_lr* elr, const char * c_range) {
   struct range_request* range_req;
-  apr_pool_clear(elr->querypool);
+  char * retval;
   range_req = range_expand(elr->lr, elr->querypool, c_range);
   // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
-  return range_request_compressed(range_req);
+  retval = strdup(range_request_compressed(range_req));
+  apr_pool_clear(elr->querypool);
+  return retval;
 }
 
 const char ** range_easy_expand(easy_lr* elr, const char * c_range) {
-  char ** ret;
   struct range_request* range_req;
-  apr_pool_clear(elr->querypool);
+  char ** nodes;
+  const char ** retval = NULL;
+  char ** loop_iter = NULL;
   range_req = range_expand(elr->lr, elr->querypool, c_range);
-  
+  nodes = range_request_nodes(range_req);
+
+
+  int list_length = 1;
+  for (loop_iter = nodes; *loop_iter != NULL; loop_iter++) {
+    list_length++;
+  }
+  retval = malloc(list_length * sizeof(char*));
+
+  char **retval_iter = retval;
+  for (loop_iter = nodes; *loop_iter != NULL; loop_iter++) {
+    *retval_iter = strdup(*loop_iter);
+    retval_iter++;
+  }
+  *retval_iter = NULL;
   // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
-  return range_request_nodes(range_req);
+  //apr_pool_clear(elr->querypool);
+  return retval;
 }
 
 char * range_easy_compress(easy_lr* elr, const char ** c_nodes) {
