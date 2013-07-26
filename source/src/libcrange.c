@@ -500,7 +500,7 @@ const char ** range_easy_expand(easy_lr* elr, const char * c_range) {
   nodes = range_request_nodes(range_req);
 
 
-  int list_length = 0;
+  int list_length = 1;
   for (loop_iter = nodes; *loop_iter != NULL; loop_iter++) {
     list_length++;
   }
