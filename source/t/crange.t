@@ -26,16 +26,26 @@ loadmodule $build_root/usr/lib/libcrange/yst-ip-list
 print $range_conf_fh $range_conf_data;
 
 
-# just md5sum outputs for now to make sure we're returning consistent data
-is( `crange -e foo100..10|md5sum`,
-    "4364b988cf558c91d49786b83da444e4  -\n",
+# just shasum outputs for now to make sure we're returning consistent data
+is( `crange -e foo100..10|shasum`,
+    "74ac488e1d74ffffbf57f161d5f336069b96f410  -\n",
     "foo100..10 # noconfig");
 
+if ($^O ne "darwin") {
+# OSX getopt doesn't allow this ordering of args
+    is(
+        `crange  -c $range_conf foo100..1 -e 2>&1`,
+        qq{foo100\nfoo101\n},
+        "foo100..1 # using range.conf",
+        );
+}
+
 is(
-   `crange  -c $range_conf foo100..1 -e 2>&1`,
-   qq{foo100\nfoo101\n},
-   "foo100..1 # using range.conf",
-  );
+    `crange -e -c $range_conf foo100..1 2>&1`,
+    qq{foo100\nfoo101\n},
+    "foo100..1 # using range.conf",
+    );
+
 
 is(
   `crange  -c $range_conf -e  'vlan(foo1.example.com)'`,

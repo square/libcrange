@@ -18,7 +18,14 @@ end
 
 class RangeLib
   extend FFI::Library
-  ffi_lib "libcrange.so"
+
+  arch, os = RUBY_PLATFORM.split('-')
+  if os =~ /^darwin/
+    ffi_lib "libcrange.dylib"
+  else
+    ffi_lib "libcrange.so"
+  end
+
   attach_function 'range_easy_create', [:string], :pointer
   attach_function 'range_easy_expand', [:pointer, :string], :pointer
   attach_function 'range_easy_eval', [:pointer, :string], :string

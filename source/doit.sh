@@ -16,6 +16,7 @@ autoconf || exit 1
 
 # This is a complete hack, can't find an easy way to disable
 # 32bit arch on OSX
+# brew install pcre libyaml
 if [ "$(uname -s)" = "Darwin" ]; then
   perl -pi -wle's/-arch i386//g' Makefile src/Makefile
 fi
