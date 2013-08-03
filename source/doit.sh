@@ -13,6 +13,12 @@ autoheader || exit 1
 automake -a || exit 1
 autoconf || exit 1
 ./configure --prefix=/usr || exit 1
+
+# This is a complete hack, can't find an easy way to disable
+# 32bit arch on OSX
+if [ "$(uname -s)" = "Darwin" ]; then
+  perl -pi -wle's/-arch i386//g' Makefile src/Makefile
+fi
 make || exit 1
 make install  || exit 1
 cd perl
