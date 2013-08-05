@@ -10,6 +10,7 @@ use File::Temp;
 my $config_base = "$FindBin::Bin/test_configs/crange1";
 my $build_root = $ENV{DESTDIR};
 my ($range_conf_fh, $range_conf) = File::Temp::tempfile();
+warn "tmpfile: $range_conf";
 
 #FIXME allow setting of lr->funcdir in range.conf
 # to let me funcdir=$build_root/usr/lib/libcrange
