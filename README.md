@@ -7,10 +7,17 @@ A library for parsing and generating range expressions.
 
 A library for parsing and generating range expressions. libcrange for modules to add symbolic name lookup features as well as functions to retreive additional data.
 
-## range syntax
+##Requirements
 
-  
-### simple ranges:
+### Red Hat / Scientific / CentOS
+* apr apr-devel flex pcre pcre-devel sqlite sqlite-devel libyaml libyaml-devel perl-YAML-Syck perl perl-core perl-devel perl-libs
+
+### Ubuntu / Debian
+* libapr1 libapr1-dev flex libpcre3 libpcre3-dev sqlite3 libsqlite3-dev libsqlite3-0 libyaml-0-2 libyaml-dev libyaml-syck-perl perl-base libperl5.14 libperl-dev
+
+## Range Syntax
+
+### Simple ranges:
   * node1,node2,node3,node4 == node1..node4 == node1..4
   * node1000..1099 == node1000..99 # auto pads digits to the end of the range
   * 1..100   # numeric only ranges
@@ -18,7 +25,7 @@ A library for parsing and generating range expressions. libcrange for modules to
   * 209.131.40.1-209.131.40.255 == 209.131.40.1-255 # IP ranges
       
       
-### clusters:
+### Clusters:
 A cluster is a way to store node membership into groups. Depending on your backend module how this is stored may vary. In the case of the YAML module, a cluster is defined by the membership of the CLUSTER key
     
   * %cluster101 == nodes defined in /var/range/cluster101.yaml - Default key CLUSTER
@@ -26,7 +33,7 @@ A cluster is a way to store node membership into groups. Depending on your backe
   * %%all == assuming %all is a lust of clusters, the additional % will expand the list of clusters to node list that is their membership
   * *node == returns the cluster(s) that node is a member of
       
-### operatons:
+### Operatons:
   * range1,range2  == union
   * range1,-range2 == set difference
   * range1,&range2 == intersection
@@ -35,7 +42,7 @@ A cluster is a way to store node membership into groups. Depending on your backe
   * range1,&/regex/ # all nodes in range1 that match regex
   * range1,-/regex/ # all nodes in range1 that do not match regex
       
-### advanced ranges:
+### Advanced ranges:
     
    * foo{1,3,5} == foo1,foo3,foo5
    * %cluster30{1,3} == %cluster301,%cluster303
@@ -45,7 +52,7 @@ A cluster is a way to store node membership into groups. Depending on your backe
    * %all:dc1,-({f,k}s301-7) == names for clusters in dc1 except ks301-7,fs301-7
    * %all:dc1,-|ks| == clusters in dc1, except those matching ks
       
-### functions:
+### Functions:
 
 libcrange modules can define certain functions to look up data about hosts or clusters  The yaml module for instance implements some of the following functions.
     
@@ -61,4 +68,3 @@ Other functions can be added via modules that provide useful insight into your e
   * vlan(host) - return vlan for this host
   * dc(host) - return datacenter for this host
   * drac(host) - might do an API call on backend to central host db to look up a drac IP for a host
-  
