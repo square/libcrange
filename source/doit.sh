@@ -2,7 +2,7 @@
 
 set -e
 set -x
-export DESTDIR=$HOME/prefix
+[ -n "$DESTDIR" ] || export DESTDIR=$HOME/prefix
 
 rm -rf $DESTDIR || exit 1
 make clean || true # ignore failures
