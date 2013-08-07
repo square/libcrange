@@ -1,0 +1,7 @@
+RPM build:
+
+# From the libcrange directory, assuming a standard homedir-based `rpmdev-setuptree` setup
+
+ln -s `pwd`/libcrange.spec ~/rpmbuild/SPECS
+tar cvfz ~/rpmbuild/SOURCES/libcrange-latest.tar.gz source
+rpmbuild -ba libcrange.spec
