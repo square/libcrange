@@ -513,14 +513,17 @@ const char ** range_easy_expand(easy_lr* elr, const char * c_range) {
   }
   *retval_iter = NULL;
   // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
-  //apr_pool_clear(elr->querypool);
+  apr_pool_clear(elr->querypool);
   return retval;
 }
 
 char * range_easy_compress(easy_lr* elr, const char ** c_nodes) {
   apr_pool_clear(elr->querypool);
+  char * retval;
   // FIXME copy/reference bits from real lr into easy_lr to expose warnings/errors
-  return range_compress(elr->lr, elr->querypool, c_nodes);
+  retval = strdup(range_compress(elr->lr, elr->querypool, c_nodes));
+  apr_pool_clear(elr->querypool);
+  return retval;
 }
 
 int range_easy_destroy(easy_lr* elr) {

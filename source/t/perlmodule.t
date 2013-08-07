@@ -22,6 +22,7 @@ yaml_path=$config_base/rangedata
 loadmodule $build_root/usr/lib/libcrange/yamlfile
 loadmodule $build_root/usr/lib/libcrange/ip
 loadmodule $build_root/usr/lib/libcrange/yst-ip-list
+perl_inc_path=$build_root/usr/local/lib64/perl5:$build_root/var/libcrange/perl:$build_root/usr/local/lib/perl/5.14.2
 perlmodule LibrangeUtils
 };
 
