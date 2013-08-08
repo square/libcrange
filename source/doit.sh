@@ -31,7 +31,7 @@ case "${OSTYPE}" in
     perl -pi -wle's/-arch i386//g' Makefile src/Makefile
     ;;
   *)
-    ./configure --prefix=/usr --enable-perl=/opt/local/bin/perl 
+    ./configure --prefix=/usr
     ;;
 esac
 make
