@@ -4,26 +4,40 @@ set -e
 set -x
 [ -n "$DESTDIR" ] || export DESTDIR=$HOME/prefix
 
-rm -rf $DESTDIR || exit 1
+rm -rf $DESTDIR
 make clean || true # ignore failures
 
-aclocal || exit 1
-libtoolize --force || exit 1
-autoheader || exit 1
-automake -a || exit 1
-autoconf || exit 1
-./configure --prefix=/usr || exit 1
+aclocal
+case "${OSTYPE}" in
+  darwin*)
+    glibtoolize --force # brew
+    ;;
+  *)
+    libtoolize --force
+    ;;
+esac
+autoheader
+automake -a
+autoconf
 
-# This is a complete hack, can't find an easy way to disable
-# 32bit arch on OSX
-# brew install pcre libyaml
-if [ "$(uname -s)" = "Darwin" ]; then
-  perl -pi -wle's/-arch i386//g' Makefile src/Makefile
-fi
-make || exit 1
-make install  || exit 1
+case "${OSTYPE}" in
+  darwin*)
+
+    # brewperl. /usr/bin/perl on osx results in https://github.com/eam/libcrange/issues/7
+    ./configure --prefix=/usr --enable-perl=/opt/local/bin/perl
+
+    # This is a complete hack, can't find an easy way to disable
+    # 32bit arch on OSX
+    perl -pi -wle's/-arch i386//g' Makefile src/Makefile
+    ;;
+  *)
+    ./configure --prefix=/usr --enable-perl=/opt/local/bin/perl 
+    ;;
+esac
+make
+make install
 cd perl
-sh ./build || exit 1
+sh ./build
 cd ..
 
 cp -a ../root/* $DESTDIR/
