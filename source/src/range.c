@@ -410,23 +410,33 @@ range* range_from_group(range_request* rr,
 range* range_from_function(range_request* rr,
                            const char* funcname, const range** r)
 {
-    range* ret;
+  range* returned_ret;
+  range* passed_ret;
     range* (*f)(range_request*, const range**);
-    const char* perl_module;
+    const char* plugin_module;
     libcrange* lr = range_request_lr(rr);
     
-    perl_module = libcrange_get_perl_module(lr, funcname);
-    if (perl_module)
-        ret = perl_function(rr, funcname, r);
-    else {
-        f = libcrange_get_function(lr, funcname);
-        if (!f) {
-        range_request_warn_type(rr, "NO_FUNCTION", funcname);
-            return range_new(rr);
-        }
-        ret = (*f)(rr, r);
+    // is this a perl function?
+    plugin_module = libcrange_get_perl_module(lr, funcname);
+    if (plugin_module) {
+      return perl_function(rr, funcname, r);
+    }	
+    
+    // or python?
+    plugin_module = libcrange_get_python_module(lr, funcname);
+    if (plugin_module) {
+      returned_ret = python_function(rr, funcname, r, &passed_ret);
+      return passed_ret;
     }
-    return ret;
+
+    // or C?
+    f = libcrange_get_function(lr, funcname);
+    if (!f) {
+      range_request_warn_type(rr, "NO_FUNCTION", funcname);
+      return range_new(rr);
+    }
+
+    return (*f)(rr, r);
 }
 
 /* true iff range **r has exactly expected_ranges elements before its null termination */

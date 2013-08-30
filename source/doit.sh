@@ -24,7 +24,7 @@ case "${OSTYPE}" in
   darwin*)
 
     # brewperl. /usr/bin/perl on osx results in https://github.com/eam/libcrange/issues/7
-    ./configure --prefix=/usr --enable-perl=/opt/local/bin/perl
+    ./configure --prefix=/usr --enable-perl=/opt/local/bin/perl --enable-python=/usr/local/bin/python
 
     # This is a complete hack, can't find an easy way to disable
     # 32bit arch on OSX

@@ -46,6 +46,35 @@ else
 fi
 ])
 
+
+python_default="/usr/bin/python"
+AC_ARG_ENABLE([python], AC_HELP_STRING([--enable-python=PYTHON],
+                      [Use this python binary to build libcrange's python
+                       functionality.
+                       (Default = /usr/local/bin/python)]),
+                       PYTHON=$enable_python,PYTHON=$python_default)
+AC_DEFUN([AC_CHECK_PYTHON],[
+AC_MSG_CHECKING(python in $PYTHON)
+if test [ -f "$PYTHON" ]
+then
+  AC_SUBST(PYTHON)
+  AC_MSG_RESULT(yes)
+  AC_MSG_CHECKING(python includes)
+# don't use python-config --cflags, it's broken on osx
+  PYTHON_CFLAGS=`${PYTHON}-config  --includes`
+  AC_SUBST(PYTHON_CFLAGS)
+  AC_MSG_RESULT($PYTHON_CFLAGS)
+  AC_MSG_CHECKING(python libraries)
+  PYTHON_LIBS=`${PYTHON}-config --ldflags`
+  AC_SUBST(PYTHON_LIBS)
+  AC_MSG_RESULT($PYTHON_LIBS)
+else
+  AC_MSG_ERROR([${PYTHON} not found])
+fi
+])
+
+
+
 AC_DEFUN([AC_CHECK_PCRE],[
 AC_PATH_PROG(pcreconfig,pcre-config)
 if test [ -z "$pcreconfig" ]
@@ -87,6 +116,7 @@ fi
 ])
 
 AC_CHECK_PERL
+AC_CHECK_PYTHON
 AC_CHECK_PCRE
 AC_CHECK_APR
 

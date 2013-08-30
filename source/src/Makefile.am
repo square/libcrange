@@ -13,10 +13,10 @@ libcrange_la_SOURCES = range_parser.y range_scanner.l \
           set.c range_request.c \
           range_sort.c range_parts.c perl_functions.c \
           libcrange.c ast.c range_compress.c \
-          range.c
+          range.c python_functions.c
 
-libcrange_la_CFLAGS = -Wall -DLIBCRANGE_FUNCDIR=\"$(pkglibdir)\" -DLIBCRANGE_CONF=\"/etc/range.conf\" -DDEFAULT_SQLITE_DB=\"/var/range.sqlite\" -DLIBCRANGE_YAML_DIR=\"/var/range/\" @PERL_CFLAGS@ @PCRE_CFLAGS@ @APR_CFLAGS@
-libcrange_la_LDFLAGS = @PERL_LIBS@ @PCRE_LIBS@ @APR_LIBS@
+libcrange_la_CFLAGS = -Wall -DLIBCRANGE_FUNCDIR=\"$(pkglibdir)\" -DLIBCRANGE_CONF=\"/etc/range.conf\" -DDEFAULT_SQLITE_DB=\"/var/range.sqlite\" -DLIBCRANGE_YAML_DIR=\"/var/range/\" @PERL_CFLAGS@ @PCRE_CFLAGS@ @APR_CFLAGS@ @PYTHON_CFLAGS@
+libcrange_la_LDFLAGS = @PERL_LIBS@ @PCRE_LIBS@ @APR_LIBS@ @PYTHON_LIBS@
 
 range_scanner.h:
 	$(LEX) range_scanner.l
