@@ -13,13 +13,13 @@ Copyrights licensed under the New BSD License. See the accompanying LICENSE file
 #define _QUOTEME(x) #x
 #define QUOTEME(x) _QUOTEME(x)
 
-#ifndef MODULE_PATH
- #define MODULE_PATH /var/libcrange/perl
+#ifndef PERL_MODULE_PATH
+ #define PERL_MODULE_PATH /var/libcrange/perl
 #endif
 
 #define PERLBOOT                                                        \
     "use strict;"                                                       \
-    "use lib qw(" QUOTEME(MODULE_PATH) ");"                             \
+    "use lib qw(" QUOTEME(PERL_MODULE_PATH) ");"                             \
     "BEGIN{ push @INC, $ENV{PERLLIB} if $ENV{PERLLIB} };"               \
     "BEGIN{ push @INC, $ENV{PERL5LIB} if $ENV{PERL5LIB} };"             \
     "our %_FUNCTIONS;"                                                  \

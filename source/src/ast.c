@@ -117,7 +117,9 @@ range* range_evaluate(range_request* rr, const rangeast* ast)
             ranges[i++] = NULL;
 
             r = range_from_function(rr, ast->data.string, (const range**)ranges);
-            for (i=0; ranges[i]; i++) range_destroy(ranges[i]);
+            for (i=0; ranges[i]; i++) {
+                range_destroy(ranges[i]);
+            }
 
             return r;
         case AST_NOTHING:

@@ -52,6 +52,8 @@ void range_request_enable_warns(range_request* rr)
 
 const char* range_request_compressed(range_request* rr)
 {
+    assert(rr);
+    assert(rr->r);
     return do_range_compress(rr, rr->r);
 }
 

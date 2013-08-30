@@ -24,6 +24,7 @@ struct libcrange {
     set* caches;
     set* functions;
     set* perl_functions;
+    set* python_functions;
     set* vars;
 
     apr_pool_t* pool;
@@ -122,6 +123,15 @@ const char* libcrange_get_perl_module(libcrange* lr, const char* funcname)
     assert(lr);
     if (lr->perl_functions)
         return set_get_data(lr->perl_functions, funcname);
+    else
+        return NULL;
+}
+
+const char* libcrange_get_python_module(libcrange* lr, const char* funcname)
+{
+    assert(lr);
+    if (lr->python_functions)
+        return set_get_data(lr->python_functions, funcname);
     else
         return NULL;
 }
@@ -305,6 +315,7 @@ static int add_functions_from_module(libcrange* lr, set* functions,
 
 #define LOADMODULE_RE "^\\s*loadmodule\\s+([-\\S]+)(?:\\s+prefix=([-\\w]+))?\\s*$"
 #define PERLMODULE_RE "^\\s*perlmodule\\s+([-\\S]+)(?:\\s+prefix=([-\\w]+))?\\s*$"
+#define PYTHONMODULE_RE "^\\s*pythonmodule\\s+([-\\S]+)(?:\\s+prefix=([-\\w]+))?\\s*$"
 #define VAR_RE "^\\s*([-\\w]+)\\s*=\\s*(\\S+)\\s*$"
 
 static int parse_config_file(libcrange* lr)
@@ -316,12 +327,14 @@ static int parse_config_file(libcrange* lr)
     char line[256];
     pcre* loadmodule_re;
     pcre* perlmodule_re;
+    pcre* pythonmodule_re;
     pcre* var_re;
     FILE* fp;
     const char* config_file;
 
     set* functions;
     set* perl_functions = NULL;
+    set* python_functions = NULL;
     set* vars;
 
     assert(lr);
@@ -348,9 +361,12 @@ static int parse_config_file(libcrange* lr)
 
     perlmodule_re = pcre_compile(PERLMODULE_RE, 0, &error,
                                   &err_offset, NULL);
+    pythonmodule_re = pcre_compile(PYTHONMODULE_RE, 0, &error,
+                                  &err_offset, NULL);
     assert(loadmodule_re);
     assert(var_re);
     assert(perlmodule_re);
+    assert(pythonmodule_re);
 
     while (fgets(line, sizeof line, fp)) {
         int err;
@@ -421,8 +437,9 @@ static int parse_config_file(libcrange* lr)
                 prefix = &line[ovector[4]];
                 line[ovector[5]] = '\0';
             }
-            else
+            else {
                 prefix = "";
+            }
 
             if (!perl_functions)
                 perl_functions = set_new(lr->pool, 0);
@@ -438,6 +455,32 @@ static int parse_config_file(libcrange* lr)
             continue;
         }
 
+        /* pythonmodule --FIXME refactor this junk into a generic $LANGmodule thing */
+        count = pcre_exec(pythonmodule_re, NULL, line, n, 0, 0, ovector, 30);
+
+        if (count > 1) {
+          module = &line[ovector[2]];
+          line[ovector[3]] = '\0';
+          if (count > 2) {
+            prefix = &line[ovector[4]];
+            line[ovector[5]] = '\0';
+          }
+          else {
+            prefix = "";
+          }
+           
+          if (!python_functions) {
+            python_functions = set_new(lr->pool, 0);
+          }
+          err = add_functions_from_pythonmodule(lr, lr->pool, python_functions, module, prefix);
+
+          if (err) {
+            fclose(fp);
+            return -1;
+          }
+            continue;
+        }
+        
         /* don't know how to parse: not a loadmoule or var=value */
         fprintf(stderr, "%s:%d syntax error [%s]\n",
                 lr->config_file, line_no, line);
@@ -448,6 +491,7 @@ static int parse_config_file(libcrange* lr)
     fclose(fp);
 
     lr->perl_functions = perl_functions;
+    lr->python_functions = python_functions;
     lr->functions = functions;
     lr->vars = vars;
     return 0;
