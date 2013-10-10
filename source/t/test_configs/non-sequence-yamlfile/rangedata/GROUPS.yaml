@@ -1,0 +1,7 @@
+---
+bar:
+- foo1..2.example.com
+baz:
+- "$bar"
+baz2: "$bar"
+qux: bar900.example.com
