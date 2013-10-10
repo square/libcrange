@@ -231,7 +231,7 @@ static set* _cluster_keys(range_request* rr, apr_pool_t* pool,
         /* if the value is a scalar, that's our answer */
         if(valuenode->type == YAML_SCALAR_NODE) {
             set_add(sections, cur_section,
-                    apr_psprintf(pool, "%s", valuenode->data.scalar.value));
+                    apr_psprintf(pool, "%s", _substitute_dollars(pool, cluster, valuenode->data.scalar.value) ));
         } else if (valuenode->type == YAML_SEQUENCE_NODE) {
             /* otherwise, glue together all the values in the list */
             working_range = apr_array_make(req_pool, 1, sizeof(char*));
