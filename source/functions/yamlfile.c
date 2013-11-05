@@ -208,7 +208,7 @@ static set* _cluster_keys(range_request* rr, apr_pool_t* pool,
     
     rootnode = yaml_document_get_root_node(&document);
     /* make sure it's just a simple dictionary */
-    if(rootnode->type != YAML_MAPPING_NODE) {
+    if(rootnode == NULL || rootnode->type != YAML_MAPPING_NODE) {
         range_request_warn(rr, "%s: malformatted cluster definition %s",
                            cluster, cluster_file);
         yaml_document_delete(&document);

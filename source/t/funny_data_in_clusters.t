@@ -43,3 +43,7 @@ is( `crange -c $range_conf -e '\%urls:qfunc'`,
     "\%urls:qfunc # q() quoted url",
     );
 
+like( `crange -c $range_conf %emptyclusterfile`,
+      qr/emptyclusterfile: malformatted cluster definition/,
+      "%emptyclusterfile, a 0-byte cluster yamlfile",
+      );
