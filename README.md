@@ -68,3 +68,4 @@ Other functions can be added via modules that provide useful insight into your e
   * vlan(host) - return vlan for this host
   * dc(host) - return datacenter for this host
   * drac(host) - might do an API call on backend to central host db to look up a drac IP for a host
+
