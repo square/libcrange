@@ -16,7 +16,7 @@ char* _join_elements(apr_pool_t* pool, char sep, set* the_set);
 const char** functions_provided(libcrange* lr)
 {
     static const char* functions[] = {"mem", "cluster", "clusters",
-                                      "get_cluster", "get_groups",
+                                      "get_cluster", "get_groups", "group",
                                       "has", "allclusters", 0};
     return functions;
 }
@@ -24,6 +24,8 @@ const char** functions_provided(libcrange* lr)
 #define KEYVALUE_SQL "select key, value from clusters where cluster=?"
 #define HAS_SQL "select cluster from clusters where key=? and value=?"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
+
+const char * sqlite_db_path;
 
 sqlite3* _open_db(range_request* rr) 
 {
@@ -33,10 +35,14 @@ sqlite3* _open_db(range_request* rr)
     
     /* open the db */
     if (!(db = libcrange_get_cache(lr, "sqlite:nodes"))) {
-        const char* sqlite_db_path = libcrange_getcfg(lr, "sqlitedb");
+        //global for now
+        sqlite_db_path = libcrange_getcfg(lr, "sqlitedb");
         if (!sqlite_db_path) sqlite_db_path = DEFAULT_SQLITE_DB;
         
         err = sqlite3_open(sqlite_db_path, &db);
+        if (err != SQLITE_OK) {
+          return NULL;
+        }
         assert(err == SQLITE_OK);
         libcrange_set_cache(lr, "sqlite:nodes", db);
     }
@@ -52,15 +58,19 @@ static set* _cluster_keys(range_request* rr, apr_pool_t* pool,
     sqlite3* db;
     sqlite3_stmt* stmt;
     int err;
+    db = _open_db(rr);
     
     /* our return set */
     sections = set_new(pool, 0);
 
-    db = _open_db(rr);
     
     /* prepare our select */
     err = sqlite3_prepare(db, KEYVALUE_SQL, strlen(KEYVALUE_SQL),
                           &stmt, NULL);
+    if (err != SQLITE_OK) {
+      range_request_warn(rr, "%s: cannot query sqlite db", cluster);
+      return sections;
+    }
     assert(err == SQLITE_OK);
 
     /* for each key/value pair in cluster */
@@ -132,11 +142,6 @@ static range* _expand_cluster(range_request* rr,
         libcrange_set_cache(lr, "nodescf:cluster_keys", cache);
     }
 
-    if (stat("/etc/range.sqlite", &st) == -1) {
-        range_request_warn_type(rr, "NOCLUSTERDEF", cluster);
-        return range_new(rr);
-    }
-
     e = set_get_data(cache, cluster);
     if (!e) {
         e = apr_palloc(lr_pool, sizeof(struct cache_entry));
@@ -180,6 +185,10 @@ static const char** _all_clusters(range_request* rr)
     db = _open_db(rr);
     err = sqlite3_prepare(db, ALLCLUSTER_SQL, strlen(ALLCLUSTER_SQL),
                           &stmt, NULL);
+    if (err != SQLITE_OK) {
+      range_request_warn(rr, "allclusters(): cannot query sqlite db");
+      return NULL;
+    }
     assert(err == SQLITE_OK);
 
     /* for each cluster */
@@ -242,6 +251,10 @@ range* rangefunc_has(range_request* rr, range** r)
     db = _open_db(rr);
     err = sqlite3_prepare(db, HAS_SQL, strlen(HAS_SQL), &stmt,
                           NULL);
+    if (err != SQLITE_OK) {
+      range_request_warn(rr, "has(%s,%s): cannot query sqlite db", tag_name, tag_value);
+      return ret;
+    }
     assert(err == SQLITE_OK);
 
     sqlite3_bind_text(stmt, 1, tag_name, strlen(tag_name), SQLITE_STATIC);
@@ -409,6 +422,21 @@ range* rangefunc_clusters(range_request* rr, range** r)
     }
 
     return ret;
+}
+
+range * rangefunc_group(range_request* rr, range** r)
+{
+    sqlite3* db;
+    db = _open_db(rr);
+    range* ret = range_new(rr);
+    apr_pool_t* pool = range_request_pool(rr);
+    const char** groups = range_get_hostnames(pool, r[0]);
+    while (*groups) {
+        range_union_inplace(rr, ret, _expand_cluster(rr, "GROUPS", *groups));
+        ++groups;
+    }
+    return ret;
+
 }
 
 range* rangefunc_get_groups(range_request* rr, range** r)
