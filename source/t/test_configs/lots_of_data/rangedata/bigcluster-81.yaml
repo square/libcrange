@@ -1,0 +1,18 @@
+ALL:
+  - $A,$B,$C,$D,$E,$F
+CLUSTER:
+  - $ALL - $DOWN
+DOWN:
+  - '%down'
+A:
+  - a100..200
+B:
+  - b200..300
+C:
+  - c100..200
+D:
+  - ddd1..2.foo.bar.com
+E:
+  - ee90..120.bar.foo.com
+F:
+  - f1..2

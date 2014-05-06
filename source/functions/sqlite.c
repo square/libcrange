@@ -25,10 +25,10 @@ const char** functions_provided(libcrange* lr)
 #define HAS_SQL "select cluster from clusters where key=? and value=?"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
 
-const char * sqlite_db_path;
 
 sqlite3* _open_db(range_request* rr) 
 {
+    char * sqlite_db_path;
     sqlite3* db;
     libcrange* lr = range_request_lr(rr);
     int err;

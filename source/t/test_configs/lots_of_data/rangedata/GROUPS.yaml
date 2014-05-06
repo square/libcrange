@@ -1,0 +1,7 @@
+---
+bar:
+- foo1..2.example.com
+baz:
+- "q(hello world)"
+qux:
+- lala
