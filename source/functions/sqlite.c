@@ -24,6 +24,7 @@ const char** functions_provided(libcrange* lr)
 #define KEYVALUE_SQL "select key, value from clusters where cluster=?"
 #define HAS_SQL "select cluster from clusters where key=? and value=?"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
+#define EMPTY_STRING ""
 
 
 sqlite3* _open_db(range_request* rr) 
@@ -35,7 +36,6 @@ sqlite3* _open_db(range_request* rr)
     
     /* open the db */
     if (!(db = libcrange_get_cache(lr, "sqlite:nodes"))) {
-        //global for now
         sqlite_db_path = libcrange_getcfg(lr, "sqlitedb");
         if (!sqlite_db_path) sqlite_db_path = DEFAULT_SQLITE_DB;
         
@@ -49,6 +49,44 @@ sqlite3* _open_db(range_request* rr)
 
     return db;
 }
+
+static char* _substitute_dollars(apr_pool_t* pool,
+                                 const char* cluster, const char* line)
+{
+    static char buf[262144];
+    char* dst = buf;
+    int len = strlen(cluster);
+    int in_regex = 0;
+    char c;
+    assert(line);
+    assert(cluster);
+
+    while ((c = *line) != '\0') {
+        if (!in_regex && c == '$') {
+            strcpy(dst, "cluster(");
+            dst += sizeof("cluster(") - 1;
+            strcpy(dst, cluster);
+            dst += len;
+            *dst++ = ':';
+            c = *++line;
+            while (isalnum(c) || c == '_') {
+                *dst++ = c;
+                c = *++line;
+            }
+            *dst++ = ')';
+        }
+        else if (c == '/') {
+            in_regex = !in_regex;
+            *dst++ = *line++;
+        }
+        else {
+            *dst++ = *line++;
+        }
+    }
+    *dst = '\0';
+    return buf;
+}
+
 
 
 static set* _cluster_keys(range_request* rr, apr_pool_t* pool,
@@ -79,7 +117,10 @@ static set* _cluster_keys(range_request* rr, apr_pool_t* pool,
         /* add it to the return */
         const char* key = (const char*)sqlite3_column_text(stmt, 0);
         const char* value = (const char*)sqlite3_column_text(stmt, 1);
-        set_add(sections, key, apr_psprintf(pool, "%s", value));
+        if (NULL == value) {
+            value = EMPTY_STRING;
+        }
+        set_add(sections, key, apr_psprintf(pool, "%s",  _substitute_dollars(pool, cluster, value) ));
     }
     sqlite3_finalize(stmt);
 
