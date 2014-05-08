@@ -6,6 +6,7 @@
 #include <apr_strings.h>
 #include <apr_tables.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 #include "set.h"
 #include "libcrange.h"
@@ -24,6 +25,7 @@ const char** functions_provided(libcrange* lr)
 #define KEYVALUE_SQL "select key, value from clusters where cluster=?"
 #define HAS_SQL "select cluster from clusters where key=? and value=?"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
+#define CLUSTERS_SQL "select distinct cluster from expanded_reverse_clusters where node = ? and key = 'CLUSTER'"
 #define EMPTY_STRING ""
 
 
@@ -441,23 +443,29 @@ range* rangefunc_get_cluster(range_request* rr, range** r)
 
 range* rangefunc_clusters(range_request* rr, range** r)
 {
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int err;
+
     range* ret = range_new(rr);
     apr_pool_t* pool = range_request_pool(rr);
     const char** nodes = range_get_hostnames(pool, r[0]);
     const char** p_nodes = nodes;
-    set* node_cluster = _get_clusters(rr);
-    
+
+    db = _open_db(rr);
+    err = sqlite3_prepare(db, CLUSTERS_SQL, strlen(CLUSTERS_SQL), &stmt, NULL);
+
+    if (err != SQLITE_OK) {
+        range_request_warn(rr, "clusters(): cannot query sqlite db");
+        return ret;
+    }
+
     while (*p_nodes) {
-        apr_array_header_t* clusters = set_get_data(node_cluster, *p_nodes);
-        if (!clusters)
-            range_request_warn_type(rr, "NO_CLUSTER", *p_nodes);
-        else {
-            /* get all */
-            int i;
-            for (i=0; i<clusters->nelts; ++i) {
-                const char* cluster = ((const char**)clusters->elts)[i];
-                range_add(ret, cluster);
-            }
+        char * node_name = *p_nodes;
+        sqlite3_bind_text(stmt, 1, node_name, strlen(node_name), SQLITE_STATIC);
+        while(sqlite3_step(stmt) == SQLITE_ROW) {
+            const char* answer = (const char*)sqlite3_column_text(stmt, 0);
+            range_add(ret, answer);
         }
         ++p_nodes;
     }
