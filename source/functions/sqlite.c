@@ -22,10 +22,10 @@ const char** functions_provided(libcrange* lr)
     return functions;
 }
 
-#define KEYVALUE_SQL "select key, value from clusters where cluster=?"
-#define HAS_SQL "select cluster from clusters where key=? and value=?"
+#define KEYVALUE_SQL "select key, value from clusters where cluster LIKE ?"
+#define HAS_SQL "select cluster from clusters where key LIKE ? and value LIKE ?"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
-#define CLUSTERS_SQL "select distinct cluster from expanded_reverse_clusters where node = ? and key = 'CLUSTER'"
+#define CLUSTERS_SQL "select distinct cluster from expanded_reverse_clusters where node LIKE ? and key LIKE 'CLUSTER'"
 #define EMPTY_STRING ""
 
 
