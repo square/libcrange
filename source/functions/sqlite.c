@@ -24,8 +24,10 @@ const char** functions_provided(libcrange* lr)
 
 #define KEYVALUE_SQL "select key, value from clusters where cluster LIKE ?"
 #define HAS_SQL "select cluster from clusters where key LIKE ? and value LIKE ?"
+#define GROUPS_SQL "select distinct key from expanded_reverse_clusters where node LIKE ? and cluster LIKE 'GROUPS'"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
 #define CLUSTERS_SQL "select distinct cluster from expanded_reverse_clusters where node LIKE ? and key LIKE 'CLUSTER'"
+#define MEM_SQL "select distinct key from expanded_reverse_clusters where cluster LIKE ? and node LIKE ?"
 #define EMPTY_STRING ""
 
 
@@ -274,25 +276,40 @@ range* rangefunc_allclusters(range_request* rr, range** r)
     return ret;
 }
 
-range* rangefunc_has(range_request* rr, range** r)
+
+range* _do_has_mem(range_request* rr, range** r, char* sql_query)
 {
     sqlite3* db;
     sqlite3_stmt* stmt;
     int err;
     range* ret = range_new(rr);
     apr_pool_t* pool = range_request_pool(rr);
+    if (NULL == r[0]) {
+        // don't attempt anything without arg #1 (key)
+        return ret;
+    }
     const char** tag_names = range_get_hostnames(pool, r[0]);
-    const char** tag_values = range_get_hostnames(pool, r[1]);
-
     const char* tag_name = tag_names[0];
-    const char* tag_value = tag_values[0];
+    if (NULL == tag_name) {
+        return ret;
+    }
+
+    const char** tag_values;
+    const char* tag_value;
+    if (NULL == r[1]) {
+        // if we don't have arg #2 (val) then search for keys with empty string value
+        tag_value = EMPTY_STRING;
+    } else {
+        tag_values = range_get_hostnames(pool, r[1]);
+        tag_value = tag_values[0];
+    }
 
     const char** all_clusters = _all_clusters(rr);
     const char** cluster = all_clusters;
     int warn_enabled = range_request_warn_enabled(rr);
-
+    
     db = _open_db(rr);
-    err = sqlite3_prepare(db, HAS_SQL, strlen(HAS_SQL), &stmt,
+    err = sqlite3_prepare(db, sql_query, strlen(sql_query), &stmt,
                           NULL);
     if (err != SQLITE_OK) {
       range_request_warn(rr, "has(%s,%s): cannot query sqlite db", tag_name, tag_value);
@@ -313,75 +330,13 @@ range* rangefunc_has(range_request* rr, range** r)
     return ret;
 }
 
+range* rangefunc_has(range_request* rr, range** r) {
+    return _do_has_mem(rr, r, HAS_SQL);
+}
 
 range* rangefunc_mem(range_request* rr, range** r)
 {
-    range* ret = range_new(rr);
-    apr_pool_t* pool = range_request_pool(rr);
-    const char** clusters = range_get_hostnames(pool, r[0]);
-    const char* cluster = clusters[0];
-    const char** wanted = range_get_hostnames(pool, r[1]);
-    
-    range* keys = _expand_cluster(rr, cluster, "KEYS");
-    const char** all_sections = range_get_hostnames(pool, keys);
-    const char** p_section = all_sections;
-
-  SECTION:
-    while (*p_section) {
-        range* r_s = _expand_cluster(rr, cluster, *p_section);
-        const char** p_wanted = wanted;
-        while (*p_wanted) {
-            if (set_get(r_s->nodes, *p_wanted) != NULL) {
-                range_add(ret, *p_section++);
-                goto SECTION;
-            }
-            ++p_wanted;
-        }
-        ++p_section;
-    }
-
-    return ret;
-}
-
-range* rangefunc_cluster(range_request* rr, range** r)
-{
-    range* ret = range_new(rr);
-    apr_pool_t* pool = range_request_pool(rr);
-    const char** clusters = range_get_hostnames(pool, r[0]);
-    const char** p = clusters;
-
-    while (*p) {
-        const char* colon = strchr(*p, ':');
-        range* r1;
-        if (colon) {
-            int len = strlen(*p);
-            int cluster_len = colon - *p;
-            int section_len = len - cluster_len - 1;
-
-            char* cl = apr_palloc(pool, cluster_len + 1);
-            char* sec = apr_palloc(pool, section_len + 1);
-
-            memcpy(cl, *p, cluster_len);
-            cl[cluster_len] = '\0';
-            memcpy(sec, colon + 1, section_len);
-            sec[section_len] = '\0';
-
-            r1 = _expand_cluster(rr, cl, sec);
-        }
-        else 
-            r1 = _expand_cluster(rr, *p, "CLUSTER");
-
-        if (range_members(r1) > range_members(ret)) {
-            /* swap them */
-            range* tmp = r1;
-            r1 = ret;
-            ret = tmp;
-        }
-        range_union_inplace(rr, ret, r1);
-        range_destroy(r1);
-        ++p;
-    }
-    return ret;
+    return _do_has_mem(rr, r, MEM_SQL);
 }
 
 static set* _get_clusters(range_request* rr)
@@ -390,11 +345,11 @@ static set* _get_clusters(range_request* rr)
     const char** p_cl = all_clusters;
     apr_pool_t* pool = range_request_pool(rr);
     set* node_cluster = set_new(pool, 40000);
-    
+
     if(p_cl == NULL) {
         return node_cluster;
     }
-    
+
     while (*p_cl) {
         range* nodes_r = _expand_cluster(rr, *p_cl, "CLUSTER");
         const char** nodes = range_get_hostnames(pool, nodes_r);
@@ -417,27 +372,35 @@ static set* _get_clusters(range_request* rr)
     return node_cluster;
 }
 
+
 range* rangefunc_get_cluster(range_request* rr, range** r)
 {
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int err;
+    
     range* ret = range_new(rr);
-    apr_pool_t* pool = range_request_lr_pool(rr);
+    apr_pool_t* pool = range_request_pool(rr);
     const char** nodes = range_get_hostnames(pool, r[0]);
     const char** p_nodes = nodes;
-    set* node_cluster = _get_clusters(rr);
+    
+    db = _open_db(rr);
+    err = sqlite3_prepare(db, CLUSTERS_SQL, strlen(CLUSTERS_SQL), &stmt, NULL);
+    
+    if (err != SQLITE_OK) {
+        range_request_warn(rr, "clusters(): cannot query sqlite db");
+        return ret;
+    }
     
     while (*p_nodes) {
-        apr_array_header_t* clusters = set_get_data(node_cluster, *p_nodes);
-        if (!clusters)
-            range_request_warn_type(rr, "NO_CLUSTER", *p_nodes);
-        else {
-            /* just get one */
-            const char* cluster = ((const char**)clusters->elts)[0];
-            assert(cluster);
-            range_add(ret, cluster);
+        char * node_name = *p_nodes;
+        sqlite3_bind_text(stmt, 1, node_name, strlen(node_name), SQLITE_STATIC);
+        while(sqlite3_step(stmt) == SQLITE_ROW) {
+            const char* answer = (const char*)sqlite3_column_text(stmt, 0);
+            range_add(ret, answer);
         }
-        ++p_nodes;
+        break; // get_cluster() returns zero or one result only
     }
-
     return ret;
 }
 
@@ -473,6 +436,48 @@ range* rangefunc_clusters(range_request* rr, range** r)
     return ret;
 }
 
+range* rangefunc_cluster(range_request* rr, range** r)
+{
+    range* ret = range_new(rr);
+    apr_pool_t* pool = range_request_pool(rr);
+    const char** clusters = range_get_hostnames(pool, r[0]);
+    const char** p = clusters;
+
+    while (*p) {
+        const char* colon = strchr(*p, ':');
+        range* r1;
+        if (colon) {
+            int len = strlen(*p);
+            int cluster_len = colon - *p;
+            int section_len = len - cluster_len - 1;
+
+            char* cl = apr_palloc(pool, cluster_len + 1);
+            char* sec = apr_palloc(pool, section_len + 1);
+
+            memcpy(cl, *p, cluster_len);
+            cl[cluster_len] = '\0';
+            memcpy(sec, colon + 1, section_len);
+            sec[section_len] = '\0';
+
+            r1 = _expand_cluster(rr, cl, sec);
+        }
+        else
+            r1 = _expand_cluster(rr, *p, "CLUSTER");
+
+        if (range_members(r1) > range_members(ret)) {
+            /* swap them */
+            range* tmp = r1;
+            r1 = ret;
+            ret = tmp;
+        }
+        range_union_inplace(rr, ret, r1);
+        range_destroy(r1);
+        ++p;
+    }
+    return ret;
+
+}
+
 range * rangefunc_group(range_request* rr, range** r)
 {
     sqlite3* db;
@@ -485,31 +490,40 @@ range * rangefunc_group(range_request* rr, range** r)
         ++groups;
     }
     return ret;
-
 }
 
 range* rangefunc_get_groups(range_request* rr, range** r)
 {
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int err;
     range* ret = range_new(rr);
     apr_pool_t* pool = range_request_pool(rr);
-    const char** nodes = range_get_hostnames(pool, r[0]);
-    const char** p_nodes = nodes;
-    set* node_cluster = _get_clusters(rr);
-    
-    while (*p_nodes) {
-        apr_array_header_t* clusters = set_get_data(node_cluster, *p_nodes);
-        if (!clusters)
-            range_request_warn_type(rr, "NO_CLUSTER", *p_nodes);
-        else {
-            /* get all */
-            int i;
-            for (i=0; i<clusters->nelts; ++i) {
-                const char* cluster = ((const char**)clusters->elts)[i];
-                range_add(ret, cluster);
-            }
-        }
-        ++p_nodes;
+    const char** tag_names = range_get_hostnames(pool, r[0]);
+
+    const char* tag_name = tag_names[0];
+
+    int warn_enabled = range_request_warn_enabled(rr);
+    if (NULL == tag_name) {
+        return ret;
     }
+
+    db = _open_db(rr);
+    err = sqlite3_prepare(db, GROUPS_SQL, strlen(GROUPS_SQL), &stmt, NULL);
+    if (err != SQLITE_OK) {
+        range_request_warn(rr, "?%s: cannot query sqlite db", tag_name );
+        return ret;
+    }
+    assert(err == SQLITE_OK);
+
+    sqlite3_bind_text(stmt, 1, tag_name, strlen(tag_name), SQLITE_STATIC);
+
+    while(sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* answer = (const char*)sqlite3_column_text(stmt, 0);
+        range_add(ret, answer);
+    }
+
+    sqlite3_finalize(stmt);
 
     return ret;
 }
