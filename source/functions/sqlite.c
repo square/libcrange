@@ -126,11 +126,11 @@ static set* _cluster_keys(range_request* rr, apr_pool_t* pool,
         }
         set_add(sections, key, apr_psprintf(pool, "%s",  _substitute_dollars(pool, cluster, value) ));
     }
-    sqlite3_finalize(stmt);
 
     /* Add the magic "KEYS" index */
     set_add(sections, "KEYS", _join_elements(pool, ',', sections));
     
+    sqlite3_finalize(stmt);
     return sections;
 }
 
@@ -241,7 +241,6 @@ static const char** _all_clusters(range_request* rr)
         const char* cluster = (const char*)sqlite3_column_text(stmt, 0);
         set_add(clusters, cluster, 0);
     }
-    sqlite3_finalize(stmt);
     
     n = clusters->members;
     table = apr_palloc(pool, sizeof(char*) * (n + 1));
@@ -253,6 +252,7 @@ static const char** _all_clusters(range_request* rr)
         table[i] = name;
     }
 
+    sqlite3_finalize(stmt);
     return table;
 }
 
@@ -326,7 +326,6 @@ range* _do_has_mem(range_request* rr, range** r, char* sql_query)
     }
 
     sqlite3_finalize(stmt);
-
     return ret;
 }
 
@@ -386,7 +385,6 @@ range* rangefunc_get_cluster(range_request* rr, range** r)
     
     db = _open_db(rr);
     err = sqlite3_prepare(db, CLUSTERS_SQL, strlen(CLUSTERS_SQL), &stmt, NULL);
-    
     if (err != SQLITE_OK) {
         range_request_warn(rr, "clusters(): cannot query sqlite db");
         return ret;
@@ -401,6 +399,7 @@ range* rangefunc_get_cluster(range_request* rr, range** r)
         }
         break; // get_cluster() returns zero or one result only
     }
+    sqlite3_finalize(stmt);
     return ret;
 }
 
@@ -417,7 +416,6 @@ range* rangefunc_clusters(range_request* rr, range** r)
 
     db = _open_db(rr);
     err = sqlite3_prepare(db, CLUSTERS_SQL, strlen(CLUSTERS_SQL), &stmt, NULL);
-
     if (err != SQLITE_OK) {
         range_request_warn(rr, "clusters(): cannot query sqlite db");
         return ret;
@@ -433,6 +431,7 @@ range* rangefunc_clusters(range_request* rr, range** r)
         ++p_nodes;
     }
 
+    sqlite3_finalize(stmt);
     return ret;
 }
 
@@ -522,9 +521,7 @@ range* rangefunc_get_groups(range_request* rr, range** r)
         const char* answer = (const char*)sqlite3_column_text(stmt, 0);
         range_add(ret, answer);
     }
-
     sqlite3_finalize(stmt);
-
     return ret;
 }
 
