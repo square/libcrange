@@ -428,6 +428,8 @@ range* rangefunc_clusters(range_request* rr, range** r)
             const char* answer = (const char*)sqlite3_column_text(stmt, 0);
             range_add(ret, answer);
         }
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
         ++p_nodes;
     }
 
