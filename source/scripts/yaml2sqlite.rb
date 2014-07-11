@@ -107,6 +107,10 @@ db.execute "PRAGMA synchronous = OFF;"
 # the forward map, using range expr
 db.execute "create table clusters (key varchar, value varchar, cluster varchar);"
 
+# hack around has() and so on needing to query individual value elements
+# it'd be better to use this instead of clusters entirely -- this is just a hack
+db.execute "create table clusters_norange (key varchar, value varchar, cluster varchar);"
+
 # node to containing clusters. we only use key=CLUSTER
 db.execute "create table expanded_reverse_clusters (node varchar, key varchar, cluster varchar, warnings varchar);" 
 
@@ -120,9 +124,16 @@ all_clusters.each do |cluster|
     insert_val = v
     if v.kind_of?(Array)
       insert_val = v.join ","
+      v.each do |individual_value|
+        puts "inserting clusters_norange: '[k, v, cluster]' = #{[k, individual_value, cluster].inspect}" if debug
+        db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", [k, individual_value, cluster]
+      end
+    else
+      puts "inserting clusters_norange: '[k, v, cluster]' = #{[k, insert_val, cluster].inspect}" if debug
+      db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", [k, insert_val, cluster]
     end
-      puts "inserting: '[k, v, cluster]' = #{[k, insert_val, cluster].inspect}" if debug
-      db.execute "insert into clusters (key, value, cluster) values (?, ?, ?)", [k, insert_val, cluster]
+    puts "inserting for clusters: '[k, v, cluster]' = #{[k, insert_val, cluster].inspect}" if debug
+    db.execute "insert into clusters (key, value, cluster) values (?, ?, ?)", [k, insert_val, cluster]
   end
   forwardmap_time =  Time.now
   puts "   forward-map time: #{forwardmap_time - yamlload_time}" if debug
