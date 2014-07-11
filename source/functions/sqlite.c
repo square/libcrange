@@ -23,7 +23,7 @@ const char** functions_provided(libcrange* lr)
 }
 
 #define KEYVALUE_SQL "select key, value from clusters where cluster LIKE ?"
-#define HAS_SQL "select cluster from clusters where key LIKE ? and value LIKE ?"
+#define HAS_SQL "select cluster from clusters_norange where key LIKE ? and value LIKE ?"
 #define GROUPS_SQL "select distinct key from expanded_reverse_clusters where node LIKE ? and cluster LIKE 'GROUPS'"
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
 #define CLUSTERS_SQL "select distinct cluster from expanded_reverse_clusters where node LIKE ? and key LIKE 'CLUSTER'"
