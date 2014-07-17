@@ -28,6 +28,7 @@ const char** functions_provided(libcrange* lr)
 #define ALLCLUSTER_SQL "select distinct cluster from clusters"
 #define CLUSTERS_SQL "select distinct cluster from expanded_reverse_clusters where node LIKE ? and key LIKE 'CLUSTER'"
 #define MEM_SQL "select distinct key from expanded_reverse_clusters where cluster LIKE ? and node LIKE ?"
+#define MMAP_PRAGMA_SQL "PRAGMA mmap_size=268435456"
 #define EMPTY_STRING ""
 
 
@@ -35,6 +36,7 @@ sqlite3* _open_db(range_request* rr)
 {
     char * sqlite_db_path;
     sqlite3* db;
+    sqlite3_stmt* stmt;
     libcrange* lr = range_request_lr(rr);
     int err;
     
@@ -48,6 +50,18 @@ sqlite3* _open_db(range_request* rr)
           return NULL;
         }
         assert(err == SQLITE_OK);
+        /* set mmap pragma */
+        err = sqlite3_prepare(db, MMAP_PRAGMA_SQL, strlen(MMAP_PRAGMA_SQL), &stmt, NULL);
+        if (err != SQLITE_OK) {
+          range_request_warn(rr, "allclusters(): cannot query sqlite db");
+          return NULL;
+        }
+        assert(err == SQLITE_OK);
+        while(sqlite3_step(stmt) == SQLITE_ROW) {
+            // do nothing. Is this even necessary for the mmap_size pragma? docs are unclear
+        }
+        /* end mmap pragma setup */
+
         libcrange_set_cache(lr, "sqlite:nodes", db);
     }
 
