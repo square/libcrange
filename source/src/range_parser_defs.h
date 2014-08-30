@@ -22,7 +22,7 @@ typedef struct YYLTYPE
 } YYLTYPE;
 #define YYLTYPE_IS_DECLARED 1
 
-void yyerror(const char* s);
+void yyerror (YYLTYPE *locp, void * scanner, char const *msg);
 int yylex(YYSTYPE* yylval_param, YYLTYPE* yylloc_param, void* yyscanner);
 
 

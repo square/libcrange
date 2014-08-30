@@ -3,20 +3,20 @@
 #include "range.h"
 #include "ast.h"
 
-#define YYPARSE_PARAM scanner
-#define YYLEX_PARAM scanner
 #include "range_parser_defs.h"
 
 %}
 
 %pure-parser
+%lex-param {void * scanner}
+%parse-param {void * scanner}
 %locations
 %error-verbose
 %start main
 
 %token tGROUP tUNION tDIFF tINTER tNOT tADMIN tGET_CLUSTER
 %token tGET_GROUP tCLUSTER tCOLON tLPAREN tRPAREN tSEMI
-%token tLBRACE tRBRACE tEOL tCOLON tERROR tHASH tEOF tWHITESPACE
+%token tLBRACE tRBRACE tEOL tERROR tHASH tEOF tWHITESPACE
 
 %token <strconst> tLITERAL tREGEX tNONRANGE_LITERAL
 %token <rangeparts> tRANGEPARTS

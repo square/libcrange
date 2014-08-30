@@ -20,9 +20,9 @@ Copyrights licensed under the New BSD License. See the accompanying LICENSE file
 int yyparse(void*);
 
 static range_request* current_rr;
-void yyerror(const char* s)
+void yyerror (YYLTYPE *locp, void * scanner, char const *msg)
 {
-    range_request_warn(current_rr, "%s", s);
+    range_request_warn(current_rr, "%s", msg);
 }
 
 void range_destroy(range* r)
