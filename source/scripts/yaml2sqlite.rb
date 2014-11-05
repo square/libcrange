@@ -151,6 +151,13 @@ all_clusters.each do |cluster|
       db.execute "insert into expanded_reverse_clusters (node, key, cluster) values (?, ?, ?)", [val, key, cluster]
     end
   end
+
+  # calculate synthetic cluster slice :KEYS so backend functions can query it
+  yaml.keys.each do |k|
+    db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", ["KEYS", k, cluster]
+    db.execute "insert into clusters (key, value, cluster) values (?, ?, ?)", ["KEYS", k, cluster]
+  end
+
   allkeys_time =  Time.now
   puts "     allkeys time: #{allkeys_time - clusterkeys_time}" if debug
   puts "cluster #{cluster} took #{Time.now - percluster_time} to process" if debug
