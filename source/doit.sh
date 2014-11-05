@@ -49,7 +49,7 @@ cp -a ../root/* $DESTDIR/
 
 # configure dns zonefile data
 DNS_FILE=$DESTDIR/etc/dns_data.tinydns
-echo dns_data_file=$DNS_FILE >> $DESTDIR/etc/range.conf
+echo dns_data_file=$DNS_FILE > $DESTDIR/etc/range.conf # truncate file
 echo "+foo1.example.com:1.2.3.1:0" >> $DNS_FILE
 echo "+foo1.example.com:1.2.3.1:0" >> $DNS_FILE
 echo "+foo2.example.com:1.2.3.2:0" >> $DNS_FILE
@@ -59,7 +59,8 @@ echo "+foo4.example.com:1.2.3.4:0" >> $DNS_FILE
 #configure site -> netblocks
 YST_IP_LIST_FILE=$DESTDIR/etc/yst-ip-list
 echo yst_ip_list=$YST_IP_LIST_FILE >> $DESTDIR/etc/range.conf
-echo "foosite 1.2.3.0/24" >> $YST_IP_LIST_FILE
+echo "foosite 1.2.3.0/24" > $YST_IP_LIST_FILE # truncate yst-ip-list
+echo "barsite 1.2.4.0/24" >> $YST_IP_LIST_FILE
 
 # configure nodes.cf / yamlfile
 RANGE_DATADIR=$DESTDIR/rangedata
@@ -83,7 +84,7 @@ echo perlmodule LibrangeUtils >>  $DESTDIR/etc/range.conf
 
 # Create some cluster data
 
-echo "---" >> $RANGE_DATADIR/GROUPS.yaml
+echo "---" > $RANGE_DATADIR/GROUPS.yaml
 echo "bar:" >> $RANGE_DATADIR/GROUPS.yaml
 echo "- foo1..2.example.com" >> $RANGE_DATADIR/GROUPS.yaml
 

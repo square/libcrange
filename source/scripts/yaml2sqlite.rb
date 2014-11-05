@@ -12,15 +12,19 @@ require 'ffi'
 
 opts = GetoptLong.new(['--rangedata', GetoptLong::REQUIRED_ARGUMENT],
                       ['--module_path', GetoptLong::REQUIRED_ARGUMENT],
+                      ['--sqlite_db', GetoptLong::REQUIRED_ARGUMENT],
                       ['--help', '-h', GetoptLong::NO_ARGUMENT])
 
 rangedata_path = "" # range data dir
 module_path = ""    # libcrange plugin dir
 debug = false
+sqlite_db = nil
 opts.each do |opt, arg|
   case opt
   when '--rangedata'
     rangedata_path = arg
+  when '--sqlite_db'
+    sqlite_db = arg
   when '--module_path'
     module_path = arg
   when '--debug'
@@ -28,6 +32,7 @@ opts.each do |opt, arg|
   end
 end
 
+raise "required: --sqlite_db" unless sqlite_db
 
 
 ## http://www.dzone.com/snippets/getting-array-strings-char-ffi
@@ -79,8 +84,8 @@ end
 
 
 
-sqlite_filename = File.join rangedata_path, "cluster.sqlite"
-sqlite_filename_tmp = File.join rangedata_path, "cluster.sqlite.tmp"
+sqlite_filename = sqlite_db
+sqlite_filename_tmp = "sqlite_db" + ".tmp"
 
 range_conf_tempfile = Tempfile.new('range.conf')
 range_conf_path = range_conf_tempfile.path
