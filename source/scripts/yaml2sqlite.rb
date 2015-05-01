@@ -131,14 +131,14 @@ all_clusters.each do |cluster|
       insert_val = v.join ","
       v.each do |individual_value|
         puts "inserting clusters_norange: '[k, v, cluster]' = #{[k, individual_value, cluster].inspect}" if debug
-        db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", [k, individual_value, cluster]
+        db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", [k.encode("UTF-8"), individual_value.to_s.encode("UTF-8"), cluster.encode("UTF-8")]
       end
     else
       puts "inserting clusters_norange: '[k, v, cluster]' = #{[k, insert_val, cluster].inspect}" if debug
-      db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", [k, insert_val, cluster]
+      db.execute "insert into clusters_norange (key, value, cluster) values (?, ?, ?)", [k.encode("UTF-8"), insert_val.to_s.encode("UTF-8"), cluster.encode("UTF-8")]
     end
     puts "inserting for clusters: '[k, v, cluster]' = #{[k, insert_val, cluster].inspect}" if debug
-    db.execute "insert into clusters (key, value, cluster) values (?, ?, ?)", [k, insert_val, cluster]
+    db.execute "insert into clusters (key, value, cluster) values (?, ?, ?)", [k.encode("UTF-8"), insert_val.to_s.encode("UTF-8"), cluster.encode("UTF-8")]
   end
   forwardmap_time =  Time.now
   puts "   forward-map time: #{forwardmap_time - yamlload_time}" if debug
@@ -148,7 +148,7 @@ all_clusters.each do |cluster|
   keys.each do |key|
     values = RangeLib.range_easy_expand(elr, "%#{cluster}:#{key}").read_array_of_string
     values.each do |val|
-      db.execute "insert into expanded_reverse_clusters (node, key, cluster) values (?, ?, ?)", [val, key, cluster]
+      db.execute "insert into expanded_reverse_clusters (node, key, cluster) values (?, ?, ?)", [val.encode("UTF-8"), key.encode("UTF-8"), cluster.encode("UTF-8")]
     end
   end
 
@@ -162,6 +162,15 @@ all_clusters.each do |cluster|
   puts "     allkeys time: #{allkeys_time - clusterkeys_time}" if debug
   puts "cluster #{cluster} took #{Time.now - percluster_time} to process" if debug
 end
+
+db.execute "insert into clusters (key, value, cluster) values (?, sqlite_version(), ?)", ["foo", "bar"]
+
+db.execute "create index ix_clusters_cluster ON clusters(cluster)"
+db.execute "create index ix_clusters_key_value ON clusters(key, value)"
+
+db.execute "create index ix_expanded_reverse_clusters_node ON expanded_reverse_clusters(node)"
+db.execute "create index ix_expanded_reverse_clusters_node_key ON expanded_reverse_clusters(node,key)"
+db.execute "create index ix_expanded_reverse_clusters_cluster_node ON expanded_reverse_clusters(cluster,node)"
 
 db.close
 
