@@ -576,4 +576,3 @@ int range_easy_destroy(easy_lr* elr) {
   free(elr);
   return 0;
 }
-

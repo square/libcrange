@@ -164,3 +164,11 @@ void range_request_set(range_request* rr, range* r)
     rr->r = r;
 }
 
+void * range_easy_expand_as_packed_set(easy_lr* elr, const char * c_range) {
+  struct range_request* range_req;
+  void *p;
+  range_req = range_expand(elr->lr, elr->querypool, c_range);
+  p = set_pack_from_range(range_req->r);
+  return p;
+}
+

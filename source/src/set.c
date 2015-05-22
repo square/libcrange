@@ -439,3 +439,120 @@ void dump_hash_values(const set* s)
     }
     printf("DEBUG: dump_hash_values: used: %d, s->members: %d, s->hashsize: %d, s->max_chain: %d\n", used, s->members, s->hashsize, max_chain);
 }
+
+/* memory needed to store set */
+int set_pack_size(const set* s) {
+  set_element* e;
+  int size = 0;
+  int i=0;
+  for (i = 0; i < s->hashsize; i++) {
+    for (e = s->table[i]; e; e = e->next) {
+      //printf("element name: %s\n", e->name);
+      size += strlen(e->name) + 1 + sizeof(int); /* string + NULL  + intlen */
+      //printf("element data: %s\n", e ? e->data : NULL);
+      if (e->data) {
+        size += strlen(e->data) + 1 + sizeof(int); /* string + NULL  + intlen */
+      } else {
+        size += sizeof(int); /* just a -1 value */
+      }
+    }
+  }
+  size += sizeof(int); /* total size */
+  //printf("set_pack_size is: %d\n", size);
+  return size;
+}
+
+/* pack a set into contiguous memory
+ * format:
+ *   int(total size of structure)
+ *   sequence of:
+ *   KEY: int(strlen) str\0
+ *   VAL: int(strlen) str\0 -- OR int(-1) if no value
+ * */
+void * set_pack(const set* s) {
+  int i;
+  set_element *e;
+  void *p, *ret;
+  apr_pool_t* pool = s->pool;
+  int size = set_pack_size(s);
+  p = ret = apr_palloc(pool, size);
+
+  /* record how big this structure is */
+  memcpy(p, &size, sizeof(size));
+  p += sizeof(size);
+//  printf("in set_pack, size is: %d\n", size);
+  printf("s->hashsize is %d\n", s->hashsize);
+  for (i = 0; i < s->hashsize; i++) {
+    for (e = s->table[i]; e; e = e->next) {
+     printf("in set pack, i = %d, e = %p, e->name = %s\n", i, e, e->name);
+      int len = strlen(e->name);
+//      printf("strlen is : %d\n", len);
+      memcpy(p, &len, sizeof(len));
+      p += sizeof(len);
+      strcpy(p, e->name);
+      p += len + 1; /* len + null byte*/
+
+//printf("e->data is: %p\n", e->data);
+      if (e->data) {
+        len = strlen(e->data);
+        memcpy(p, &len, sizeof(len));
+        p += sizeof(len);
+        strcpy(p, e->data);
+        p += len + 1; /* len + null byte*/
+      } else {
+        /* encoding for NULL data, len = -1 and no data */
+        len = -1;
+        memcpy(p, &len, sizeof(len));
+        p += sizeof(len);
+      }
+    }
+  }
+  return ret;
+}
+
+typedef struct range
+{
+    set* nodes;
+    int quoted;
+} range;
+
+
+void * set_pack_from_range(range *r) {
+  return set_pack(r->nodes);
+}
+
+set * set_unpack(apr_pool_t* pool, void * packed_data) {
+  int size;
+  void * p = packed_data;
+  //printf("XXXXXX p = %p\n");
+  memcpy(&size, p, sizeof(size));
+  //printf("in set_unpack, size is: %d\n", size);
+  p += sizeof(size);
+
+  set * ret = set_new(pool, 0);
+  while (1) {
+    void * key;
+    void * val;
+    int string_len = 0;
+    memcpy(&string_len, p, sizeof(string_len));
+//    printf("in set_unpack, string_len is: %d\n", string_len);
+    p += sizeof(string_len);
+    key = p;
+    p += strlen(p) + 1;
+    /*data */
+    memcpy(&string_len, p, sizeof(string_len));
+    p += sizeof(string_len);
+    if (string_len == -1) {
+      val = NULL;
+    } else {
+      val = p;
+      p += strlen(p) + 1;
+    }
+    set_add(ret, key, val);
+//    printf("packed_data = %p and data+size = %p and  p = %p\n", packed_data, (packed_data + size), p);
+    if ((packed_data + size) <= p) {
+      break;
+    }
+  }
+  return ret;
+}
