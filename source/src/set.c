@@ -447,9 +447,7 @@ int set_pack_size(const set* s) {
   int i=0;
   for (i = 0; i < s->hashsize; i++) {
     for (e = s->table[i]; e; e = e->next) {
-      //printf("element name: %s\n", e->name);
       size += strlen(e->name) + 1 + sizeof(int); /* string + NULL  + intlen */
-      //printf("element data: %s\n", e ? e->data : NULL);
       if (e->data) {
         size += strlen(e->data) + 1 + sizeof(int); /* string + NULL  + intlen */
       } else {
@@ -458,7 +456,6 @@ int set_pack_size(const set* s) {
     }
   }
   size += sizeof(int); /* total size */
-  //printf("set_pack_size is: %d\n", size);
   return size;
 }
 
@@ -480,19 +477,14 @@ void * set_pack(const set* s) {
   /* record how big this structure is */
   memcpy(p, &size, sizeof(size));
   p += sizeof(size);
-//  printf("in set_pack, size is: %d\n", size);
-  printf("s->hashsize is %d\n", s->hashsize);
   for (i = 0; i < s->hashsize; i++) {
     for (e = s->table[i]; e; e = e->next) {
-     printf("in set pack, i = %d, e = %p, e->name = %s\n", i, e, e->name);
       int len = strlen(e->name);
-//      printf("strlen is : %d\n", len);
       memcpy(p, &len, sizeof(len));
       p += sizeof(len);
       strcpy(p, e->name);
       p += len + 1; /* len + null byte*/
 
-//printf("e->data is: %p\n", e->data);
       if (e->data) {
         len = strlen(e->data);
         memcpy(p, &len, sizeof(len));
@@ -524,9 +516,7 @@ void * set_pack_from_range(range *r) {
 set * set_unpack(apr_pool_t* pool, void * packed_data) {
   int size;
   void * p = packed_data;
-  //printf("XXXXXX p = %p\n");
   memcpy(&size, p, sizeof(size));
-  //printf("in set_unpack, size is: %d\n", size);
   p += sizeof(size);
 
   set * ret = set_new(pool, 0);
@@ -535,7 +525,6 @@ set * set_unpack(apr_pool_t* pool, void * packed_data) {
     void * val;
     int string_len = 0;
     memcpy(&string_len, p, sizeof(string_len));
-//    printf("in set_unpack, string_len is: %d\n", string_len);
     p += sizeof(string_len);
     key = p;
     p += strlen(p) + 1;
@@ -549,7 +538,6 @@ set * set_unpack(apr_pool_t* pool, void * packed_data) {
       p += strlen(p) + 1;
     }
     set_add(ret, key, val);
-//    printf("packed_data = %p and data+size = %p and  p = %p\n", packed_data, (packed_data + size), p);
     if ((packed_data + size) <= p) {
       break;
     }

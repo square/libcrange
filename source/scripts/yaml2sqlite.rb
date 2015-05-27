@@ -20,6 +20,7 @@ opts = GetoptLong.new(['--rangedata', GetoptLong::REQUIRED_ARGUMENT],
 
 rangedata_path = "" # range data dir
 module_path = ""    # libcrange plugin dir
+mdbm_path = "" # mdbm path
 debug = false
 sqlite_db = nil
 opts.each do |opt, arg|
