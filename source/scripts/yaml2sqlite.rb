@@ -97,6 +97,7 @@ end
 #
 #  page size, presize(initial size)
 mdbm_path_tmp = mdbm_path + ".tmp"
+File.unlink mdbm_path_tmp rescue true
 $mdbm = Mdbm.new(mdbm_path_tmp, (Mdbm::MDBM_O_RDWR|Mdbm::MDBM_O_CREAT), 0644, 2**20, 2**28)
 
 
