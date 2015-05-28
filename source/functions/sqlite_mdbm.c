@@ -75,18 +75,15 @@ sqlite3* _open_db(range_request* rr)
 
 MDBM * _open_mdbm(range_request* rr)
 {
-/*
   char * mdbm_db_path;
-  MDBM * ret = 0;
-  if (!(db = libcrange_get_cache(lr, "mdbm:nodes"))) {
+  if (!mdbm_cache) {
+    libcrange* lr = range_request_lr(rr);
     mdbm_db_path = libcrange_getcfg(lr, "mdbmdb");
     if (!mdbm_db_path) mdbm_db_path = DEFAULT_MDBM_DB;
-    ret = mdbm_open(mdbm_db_path, MDBM_O_RDONLY, 0, 0, 0);
-    if (!ret) { range_request_warn(rr, "cannot open mdbm"); }
-  }
-*/
-  if (!mdbm_cache) {
-    mdbm_cache = mdbm_open(DEFAULT_MDBM_DB, MDBM_O_RDONLY, 0, 0, 0);
+
+    mdbm_cache = mdbm_open(mdbm_db_path, MDBM_O_RDONLY, 0, 0, 0);
+    if (!mdbm_cache) { range_request_warn(rr, "cannot open mdbm"); }
+    assert(mdbm_cache);
   }
   return mdbm_cache;
 }
