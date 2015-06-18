@@ -69,3 +69,26 @@ Other functions can be added via modules that provide useful insight into your e
   * dc(host) - return datacenter for this host
   * drac(host) - might do an API call on backend to central host db to look up a drac IP for a host
 
+## Install
+
+### Ubuntu
+
+#### Build and install mdbm:
+
+  * sudo apt-get update
+  * sudo apt-get install --yes build-essential git
+  * sudo apt-get install --yes openssl libssl-dev libcppunit-dev libreadline-dev
+  * git clone https://github.com/yahoo/mdbm.git
+  * cd mdbm && sudo make install PREFIX=/usr
+  * cd /usr/lib && sudo ln ../lib64/libmdbm.so.4
+
+#### Build and install libcrange
+
+  * sudo apt-get install -qq libapr1 libapr1-dev flex libpcre3 libpcre3-dev sqlite3 libsqlite3-dev \
+          libsqlite3-0 libyaml-0-2 libyaml-dev libyaml-syck-perl perl-base libperl5.18 libperl-dev \
+	  rubygems-integration ruby-ffi
+  * sudo apt-get install -qq automake autoconf m4 flex libfl-dev bison libbison-dev bison-doc libtool
+  * sudo apt-get install -qq python-pip python-dev libffi-dev
+  * sudo pip install cffi
+  * git clone https://github.com/square/libcrange.git
+  * cd libcrange/source && bash doit.sh && bash testit.sh && sudo make install
