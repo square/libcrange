@@ -1,6 +1,6 @@
+#include <Python.h>
 #include "python_functions.h"
 #include <apr_strings.h>
-#include <Python.h>
 
 #define _QUOTEME(x) #x
 #define QUOTEME(x) _QUOTEME(x)
@@ -62,10 +62,12 @@ get_and_load_exported_functions(libcrange* lr, apr_pool_t* pool,
   return functions;
 }
 
+#if 0
 static void destruct_python(void)
 {
   // cleanup python interp FIXME
 }
+#endif
 
 int add_functions_from_pythonmodule(libcrange* lr, apr_pool_t* pool,
                                   set* pythonfunctions,
@@ -76,7 +78,6 @@ int add_functions_from_pythonmodule(libcrange* lr, apr_pool_t* pool,
     const char* module_copy = apr_pstrdup(pool, module);
     const char *python_inc_path = 0;
     static int python_interp = 0;
-    PyObject *pModuleName;
     PyObject *pModule;
 
     // bootstrap the python interpreter if it hasn't been done yet
@@ -185,7 +186,7 @@ static range* _python_function(range_request* rr,
       return result;
     }
     // an iteratable object was returned, transform it into result
-    while (item = PyIter_Next(iterator)) {
+    while ((item = PyIter_Next(iterator)) != NULL) {
       // PyObject_Print(item, stdout, 0 );
       range_add(result, PyString_AsString(item));
       Py_DECREF(item);

@@ -20,6 +20,11 @@ Copyrights licensed under the New BSD License. See the accompanying LICENSE file
 #include "perl_functions.h"
 #include "range_request.h"
 
+extern int add_functions_from_pythonmodule(libcrange* lr, apr_pool_t* pool,
+           set* pythonfunctions, const char* module, const char* prefix);
+
+extern void dump_hash_values(const set* s);
+
 struct libcrange {
     set* caches;
     set* functions;
@@ -538,9 +543,9 @@ const char * range_easy_eval(easy_lr* elr, const char * c_range) {
 
 const char ** range_easy_expand(easy_lr* elr, const char * c_range) {
   struct range_request* range_req;
-  char ** nodes;
+  const char ** nodes;
   const char ** retval = NULL;
-  char ** loop_iter = NULL;
+  const char ** loop_iter = NULL;
   range_req = range_expand(elr->lr, elr->querypool, c_range);
   nodes = range_request_nodes(range_req);
 
@@ -551,7 +556,7 @@ const char ** range_easy_expand(easy_lr* elr, const char * c_range) {
   }
   retval = malloc(list_length * sizeof(char*));
 
-  char **retval_iter = retval;
+  const char **retval_iter = retval;
   for (loop_iter = nodes; *loop_iter != NULL; loop_iter++) {
     *retval_iter = strdup(*loop_iter);
     retval_iter++;

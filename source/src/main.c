@@ -24,7 +24,7 @@ int main(int argc, char const* const* argv)
     atexit(apr_terminate);
     apr_pool_create(&pool, NULL);
 
-    while ((c = getopt (argc, argv, "edc:")) != -1) {
+    while ((c = getopt (argc, (char * const *)argv, "edc:")) != -1) {
       switch (c)
       {
         case 'e':

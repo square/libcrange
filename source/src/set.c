@@ -437,7 +437,7 @@ void dump_hash_values(const set* s)
         }
         max_chain = max_chain < this_chain ? this_chain : max_chain;
     }
-    printf("DEBUG: dump_hash_values: used: %d, s->members: %d, s->hashsize: %d, s->max_chain: %d\n", used, s->members, s->hashsize, max_chain);
+    printf("DEBUG: dump_hash_values: used: %d, s->members: %ld, s->hashsize: %ld, s->max_chain: %d\n", used, s->members, s->hashsize, max_chain);
 }
 
 /* memory needed to store set */

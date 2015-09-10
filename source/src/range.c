@@ -17,6 +17,10 @@ Copyrights licensed under the New BSD License. See the accompanying LICENSE file
 #include "ast.h"
 #include "range_request.h"
 
+extern const char* libcrange_get_python_module(libcrange* lr,
+                   const char* funcname);
+extern range * python_function(range_request* rr,
+               const char* funcname, const range** r, range ** result);
 int yyparse(void*);
 
 static range_request* current_rr;
@@ -410,8 +414,8 @@ range* range_from_group(range_request* rr,
 range* range_from_function(range_request* rr,
                            const char* funcname, const range** r)
 {
-  range* returned_ret;
-  range* passed_ret;
+    range* returned_ret;
+    range* passed_ret;
     range* (*f)(range_request*, const range**);
     const char* plugin_module;
     libcrange* lr = range_request_lr(rr);
