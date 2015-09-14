@@ -104,7 +104,7 @@ int add_functions_from_perlmodule(libcrange* lr, apr_pool_t* pool,
     const char** exported_functions;
     const char** p;
     const char* module_copy = apr_pstrdup(pool, module);
-    char *perl_inc_path = 0;
+    const char *perl_inc_path = 0;
     char perlboot[4096] = ""; /* bigger than PERLBOOT + @INC paths */
 
     PerlInterpreter* org_perl = PERL_GET_CONTEXT;

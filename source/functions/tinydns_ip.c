@@ -86,7 +86,7 @@ static cache_entry* tinydns_read(libcrange* lr)
         if (len+1 >= sizeof(line) && line[len - 1] != '\n') {
             /* incomplete line */
             fprintf(stderr, "%s: lines > %d chars not supported\n", dns_file,
-                    sizeof line);
+                    (int)(sizeof line));
             exit(-1);
         }
 

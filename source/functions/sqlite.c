@@ -7,6 +7,7 @@
 #include <apr_tables.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "set.h"
 #include "libcrange.h"
@@ -34,7 +35,7 @@ const char** functions_provided(libcrange* lr)
 
 sqlite3* _open_db(range_request* rr) 
 {
-    char * sqlite_db_path;
+    const char * sqlite_db_path;
     sqlite3* db;
     sqlite3_stmt* stmt;
     libcrange* lr = range_request_lr(rr);
@@ -187,12 +188,19 @@ char* _join_elements(apr_pool_t* pool, char sep, set* the_set)
 static range* _expand_cluster(range_request* rr,
                               const char* cluster, const char* section)
 {
-    struct stat st;
     const char* res;
     libcrange* lr = range_request_lr(rr);
     set* cache = libcrange_get_cache(lr, "nodescf:cluster_keys");
     apr_pool_t* req_pool = range_request_pool(rr);
     apr_pool_t* lr_pool = range_request_lr_pool(rr);
+    time_t now;
+
+    /*
+     * TBOSS NOTE: This code had a bunch of references to struct stat st
+     * which was never assigned any value. So whatever was intended, it was
+     * completely broken. My "fix" is probably broken, too. But at least
+     * it gets rid of the compiler warnings.
+     */
 
     cache_entry* e;
 
@@ -201,20 +209,21 @@ static range* _expand_cluster(range_request* rr,
         libcrange_set_cache(lr, "nodescf:cluster_keys", cache);
     }
 
+    now = time(NULL);
     e = set_get_data(cache, cluster);
     if (!e) {
         e = apr_palloc(lr_pool, sizeof(struct cache_entry));
         apr_pool_create(&e->pool, lr_pool);
         e->sections = _cluster_keys(rr, e->pool, cluster);
-        e->mtime = st.st_mtime;
+        e->mtime = now;
         set_add(cache, cluster, e);
     }
     else {
-        time_t cached_mtime = e->mtime;
-        if (cached_mtime != st.st_mtime) {
+        /* Expire cached entries after 30 seconds(?) */
+        if (e->mtime + 30 < now) {
             apr_pool_clear(e->pool);
             e->sections = _cluster_keys(rr, e->pool, cluster);
-            e->mtime = st.st_mtime;
+            e->mtime = now;
         } 
     }
 
@@ -318,14 +327,12 @@ range* _do_has_mem(range_request* rr, range** r, char* sql_query)
         tag_value = tag_values[0];
     }
 
-    const char** all_clusters = _all_clusters(rr);
-    const char** cluster = all_clusters;
     int warn_enabled = range_request_warn_enabled(rr);
     
     db = _open_db(rr);
     err = sqlite3_prepare(db, sql_query, strlen(sql_query), &stmt,
                           NULL);
-    if (err != SQLITE_OK) {
+    if (err != SQLITE_OK && warn_enabled) {
       range_request_warn(rr, "has(%s,%s): cannot query sqlite db", tag_name, tag_value);
       return ret;
     }
@@ -352,6 +359,7 @@ range* rangefunc_mem(range_request* rr, range** r)
     return _do_has_mem(rr, r, MEM_SQL);
 }
 
+#ifdef NEED_GET_CLUSTERS
 static set* _get_clusters(range_request* rr)
 {
     const char** all_clusters = _all_clusters(rr);
@@ -384,6 +392,7 @@ static set* _get_clusters(range_request* rr)
 
     return node_cluster;
 }
+#endif
 
 
 range* rangefunc_get_cluster(range_request* rr, range** r)
@@ -405,7 +414,7 @@ range* rangefunc_get_cluster(range_request* rr, range** r)
     }
     
     while (*p_nodes) {
-        char * node_name = *p_nodes;
+        const char * node_name = *p_nodes;
         sqlite3_bind_text(stmt, 1, node_name, strlen(node_name), SQLITE_STATIC);
         while(sqlite3_step(stmt) == SQLITE_ROW) {
             const char* answer = (const char*)sqlite3_column_text(stmt, 0);
@@ -436,7 +445,7 @@ range* rangefunc_clusters(range_request* rr, range** r)
     }
 
     while (*p_nodes) {
-        char * node_name = *p_nodes;
+        const char * node_name = *p_nodes;
         sqlite3_bind_text(stmt, 1, node_name, strlen(node_name), SQLITE_STATIC);
         while(sqlite3_step(stmt) == SQLITE_ROW) {
             const char* answer = (const char*)sqlite3_column_text(stmt, 0);
@@ -518,7 +527,6 @@ range* rangefunc_get_groups(range_request* rr, range** r)
 
     const char* tag_name = tag_names[0];
 
-    int warn_enabled = range_request_warn_enabled(rr);
     if (NULL == tag_name) {
         return ret;
     }

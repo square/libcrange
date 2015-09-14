@@ -13,6 +13,8 @@ Copyrights licensed under the New BSD License. See the accompanying LICENSE file
 #include "set.h"
 #include "range_compress.h"
 
+extern void * set_pack_from_range(range *r);
+
 struct range_request {
     apr_pool_t* pool;
     char* warnings;
