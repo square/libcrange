@@ -116,7 +116,7 @@ static char* _substitute_dollars(apr_pool_t* pool,
             dst += len;
             *dst++ = ':';
             c = *++line;
-            while (isalnum(c) || c == '_') {
+            while (isalnum(c) || c == '-' || c == '_') {
                 *dst++ = c;
                 c = *++line;
             }
