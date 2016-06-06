@@ -20,4 +20,3 @@ script: cd source && ./doit.sh && ./testit.sh
 notifications:
   irc:
     - "irc.freenode.net#range"
-    - "irc.freenode.net#square"
